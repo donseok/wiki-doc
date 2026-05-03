@@ -4,8 +4,8 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider, themeInitScript } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'PI Wiki — MES/APS PI 지식 허브',
-  description: 'MES/APS PI 활동을 위한 위키 기반 지식 허브',
+  title: 'Atlas — 사내 시스템 지식의 지도',
+  description: 'MES·APS·ERP·CRM 등 사내 IT 시스템 문서를 한 곳에서 관리하는 위키',
 };
 
 export default function RootLayout({

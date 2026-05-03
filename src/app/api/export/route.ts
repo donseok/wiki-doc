@@ -11,7 +11,7 @@
  * {
  *   exportedAt: ISO8601,
  *   version: "1.3",
- *   schema: "pi-wiki-export",
+ *   schema: "atlas-wiki-export",
  *   wiki: { name, url },
  *   counts: {...},
  *   tree:        TreeNode[],
@@ -181,13 +181,13 @@ export async function GET(req: NextRequest) {
         : Promise.resolve([] as Array<Record<string, unknown>>),
     ]);
 
-    const wikiName = process.env.WIKI_NAME?.trim() || 'PI Wiki';
+    const wikiName = process.env.WIKI_NAME?.trim() || 'Atlas';
     const wikiUrl = process.env.WIKI_BASE_URL?.trim() || u.origin;
 
     const payload = {
       exportedAt: new Date().toISOString(),
       version: VERSION,
-      schema: 'pi-wiki-export',
+      schema: 'atlas-wiki-export',
       wiki: { name: wikiName, url: wikiUrl },
       counts: {
         tree: tree.length,
@@ -224,7 +224,7 @@ export async function GET(req: NextRequest) {
 
     if (wantDownload) {
       const dateStr = new Date().toISOString().slice(0, 10);
-      headers['Content-Disposition'] = `attachment; filename="pi-wiki-export-${dateStr}.json"`;
+      headers['Content-Disposition'] = `attachment; filename="atlas-wiki-export-${dateStr}.json"`;
     }
 
     return new NextResponse(JSON.stringify(payload, null, 2), { status: 200, headers });

@@ -1,13 +1,17 @@
 /**
- * PI Wiki 초기 시드
- * - FR-104: PI 기본 메뉴 트리 자동 생성
+ * 초기 시드 (도메인 범용화 — Round 3)
+ * - FR-104: 기본 메뉴 트리 자동 생성 (PI 예시 + ERP/CRM/사내IT 예시)
  * - FR-211: 페이지 템플릿 시스템 기본 10종 등록
  * - 기본 칸반 보드 1개 생성
  */
 
 import { PrismaClient } from '@prisma/client';
 import { DEFAULT_TEMPLATES } from '../src/server/default-templates';
-import { PI_DEFAULT_TREE, type PIDefaultNode } from '../src/server/pi-default-tree';
+import {
+  PI_DEFAULT_TREE,
+  EXTRA_SAMPLE_WORKSPACES,
+  type PIDefaultNode,
+} from '../src/server/pi-default-tree';
 import { applyTemplateVariables } from '../src/lib/templates';
 
 const prisma = new PrismaClient();
@@ -39,70 +43,120 @@ async function seedTemplates() {
   console.log(`  ✔ ${DEFAULT_TEMPLATES.length}개 템플릿 등록 완료`);
 }
 
-async function seedTree() {
-  console.log('▶ PI 기본 트리 시드 시작...');
+const templateMap = new Map(DEFAULT_TEMPLATES.map((t) => [t.key, t]));
 
-  const existing = await prisma.treeNode.count();
-  if (existing > 0) {
-    console.log(`  ⤬ TreeNode 가 이미 ${existing}개 존재함 — 트리 시드 스킵`);
-    return;
-  }
+async function createTreeNode(
+  node: PIDefaultNode,
+  parentId: string | null,
+  order: number,
+): Promise<number> {
+  let count = 1;
 
-  const templateMap = new Map(DEFAULT_TEMPLATES.map((t) => [t.key, t]));
-
-  let counter = 0;
-  async function createNode(node: PIDefaultNode, parentId: string | null, order: number) {
-    counter += 1;
-
-    if (node.type === 'folder') {
-      const created = await prisma.treeNode.create({
-        data: {
-          parentId,
-          type: 'folder',
-          title: node.title,
-          icon: node.icon,
-          order,
-        },
-      });
-      if (node.children) {
-        for (const [i, child] of node.children.entries()) {
-          await createNode(child, created.id, i);
-        }
-      }
-      return;
-    }
-
-    // page
-    const tmpl = node.templateKey ? templateMap.get(node.templateKey) : undefined;
-    const md = tmpl
-      ? applyTemplateVariables(tmpl.contentMarkdown, { author: '시스템', title: node.title })
-      : '';
-
+  if (node.type === 'folder') {
     const created = await prisma.treeNode.create({
       data: {
         parentId,
-        type: 'page',
+        type: 'folder',
         title: node.title,
         icon: node.icon,
         order,
       },
     });
-
-    await prisma.page.create({
-      data: {
-        treeNodeId: created.id,
-        contentMarkdown: md,
-        status: 'Draft',
-        authorName: '시스템',
-      },
-    });
+    if (node.children) {
+      for (const [i, child] of node.children.entries()) {
+        count += await createTreeNode(child, created.id, i);
+      }
+    }
+    return count;
   }
 
+  const tmpl = node.templateKey ? templateMap.get(node.templateKey) : undefined;
+  const md = tmpl
+    ? applyTemplateVariables(tmpl.contentMarkdown, { author: '시스템', title: node.title })
+    : '';
+
+  const created = await prisma.treeNode.create({
+    data: {
+      parentId,
+      type: 'page',
+      title: node.title,
+      icon: node.icon,
+      order,
+    },
+  });
+
+  await prisma.page.create({
+    data: {
+      treeNodeId: created.id,
+      contentMarkdown: md,
+      status: 'Draft',
+      authorName: '시스템',
+    },
+  });
+  return count;
+}
+
+const PI_SAMPLE_WRAPPER_TITLE = '샘플 워크스페이스 - PI 활동 (MES/APS)';
+
+async function seedTree() {
+  console.log('▶ 기본 트리 시드 시작...');
+
+  const existing = await prisma.treeNode.count();
+  if (existing > 0) {
+    console.log(`  ⤬ TreeNode 가 이미 ${existing}개 존재함 — PI 트리 시드 스킵`);
+    return;
+  }
+
+  let counter = 0;
+
+  // PI 트리 — 30 노드를 "샘플 워크스페이스 - PI 활동 (MES/APS)" 폴더로 감싸 격상.
+  const piWrapper = await prisma.treeNode.create({
+    data: {
+      parentId: null,
+      type: 'folder',
+      title: PI_SAMPLE_WRAPPER_TITLE,
+      icon: '🗂️',
+      order: 0,
+    },
+  });
+  counter += 1;
   for (const [i, top] of PI_DEFAULT_TREE.entries()) {
-    await createNode(top, null, i);
+    counter += await createTreeNode(top, piWrapper.id, i);
   }
 
-  console.log(`  ✔ ${counter}개 노드 생성 완료`);
+  console.log(`  ✔ PI 예시 트리 ${counter}개 노드 생성 완료`);
+}
+
+async function seedExtraSampleWorkspaces() {
+  console.log('▶ 추가 예시 워크스페이스 시드 시작 (ERP / CRM / 사내 IT)...');
+
+  // 루트 다음 order 값 결정 (멱등 추가용)
+  const rootMaxOrder = await prisma.treeNode.aggregate({
+    where: { parentId: null },
+    _max: { order: true },
+  });
+  let nextOrder = (rootMaxOrder._max.order ?? -1) + 1;
+
+  let inserted = 0;
+  let skipped = 0;
+  for (const top of EXTRA_SAMPLE_WORKSPACES) {
+    const exists = await prisma.treeNode.findFirst({
+      where: { parentId: null, title: top.title, type: 'folder' },
+      select: { id: true },
+    });
+    if (exists) {
+      skipped += 1;
+      continue;
+    }
+    inserted += await createTreeNode(top, null, nextOrder);
+    nextOrder += 1;
+  }
+
+  if (inserted === 0 && skipped > 0) {
+    console.log(`  ⤬ 추가 예시 워크스페이스 ${skipped}개 이미 존재 — 스킵`);
+  } else {
+    console.log(`  ✔ 추가 예시 노드 ${inserted}개 생성 (이미 존재: ${skipped}개)`);
+  }
 }
 
 async function seedBoard() {
@@ -159,10 +213,11 @@ async function seedWhiteboard() {
 
 async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log('PI Wiki 초기 시드');
+  console.log('Atlas 초기 시드');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   await seedTemplates();
   await seedTree();
+  await seedExtraSampleWorkspaces();
   await seedBoard();
   await seedWhiteboard();
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

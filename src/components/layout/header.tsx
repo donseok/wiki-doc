@@ -46,14 +46,18 @@ export function Header() {
     <TooltipProvider delayDuration={300}>
       <header className="glass sticky top-0 z-40 flex h-14 items-center justify-between border-b px-4">
         {/* Logo */}
-        <Link href="/dashboard" className="flex items-center gap-2.5 font-semibold transition-opacity hover:opacity-80">
+        <Link
+          href="/dashboard"
+          aria-label="아틀라스 — 사내 시스템 지식의 지도"
+          className="flex items-center gap-2.5 font-semibold transition-opacity hover:opacity-80"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
             <BookOpen className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight">PI Wiki</span>
+            <span className="text-sm font-bold tracking-tight">Atlas</span>
             <span className="hidden text-[10px] font-normal text-muted-foreground sm:block">
-              MES/APS PI 지식 허브
+              사내 시스템 지식의 지도
             </span>
           </div>
         </Link>

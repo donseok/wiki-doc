@@ -24,6 +24,7 @@ const GROUPS: ShortcutGroup[] = [
     items: [
       { keys: ['Ctrl', 'K'], description: '검색 포커스' },
       { keys: ['Ctrl', '/'], description: '단축키 도움말 (이 창)' },
+      { keys: ['Ctrl', 'B'], description: '사이드바 접기/펼치기' },
     ],
   },
   {

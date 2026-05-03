@@ -40,7 +40,7 @@ export default async function DashboardPage() {
       <div className="animate-slide-up">
         <h1 className="text-2xl font-bold tracking-tight">대시보드</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          안녕하세요, <span className="font-medium text-foreground">{me}</span>님 — PI Wiki 활동 현황입니다.
+          안녕하세요, <span className="font-medium text-foreground">{me}</span>님 — Atlas 활동 현황입니다.
         </p>
       </div>
 

@@ -1,6 +1,9 @@
-# PI Wiki — 기여자 / AI 가이드
+# Atlas (구 PI Wiki) — 기여자 / AI 가이드
 
 이 파일은 **AI 보조 도구(Claude Code 등)가 작업 시 참고할 컨벤션과 컨텍스트**를 담는다.
+
+> 시스템 명칭은 Round 3(2026-05-03)에 **PI Wiki → Atlas (한글: 아틀라스)** 로 변경되었다.
+> 이력 보존을 위해 본 문서의 하네스 변경 이력 / Sprint 체크리스트 / 요구사항 정의서 파일명(`PI_Wiki_요구사항정의서_v1.3.md`)은 그대로 유지한다.
 
 ## 하네스: PI Wiki 4인 개발팀 (프로젝트 전용)
 
@@ -15,7 +18,7 @@
 
 ## 프로젝트 컨텍스트
 
-- **목적**: MES/APS PI 활동 지원용 사내 위키. 30명 규모, 4주 4스프린트 일정.
+- **목적**: 사내 IT 시스템 문서 관리(MES / APS / ERP / CRM / 사내 IT 일반 등) 위키. 1차 출범은 PI(Process Innovation) 활동 지원이었으나 Round 3 부터 도메인 범용 위키로 확장. 30명 규모, 4주 4스프린트 일정.
 - **스택**: Next.js 14 (App Router) + TypeScript + Tailwind + shadcn/ui (직접 작성, CLI 미사용) + TipTap (Sprint 2~) + tldraw (Sprint 4~) + PostgreSQL 16 (pgvector + pg_trgm) + Prisma 5.
 - **인증**: 1차 미적용. `getCurrentUserServer()` 추상화로 향후 SSO 도입.
 - **요구사항 정의서**: `PI_Wiki_요구사항정의서_v1.3.md` (FR-XXX, NFR-XXX 코드로 모든 기능 추적).

@@ -104,7 +104,7 @@ export async function MyPagesWidget({ currentUser }: Props) {
 
       {merged.length === 0 ? (
         <p className="py-4 text-center text-sm text-muted-foreground">
-          작성/수정한 문서가 없습니다.
+          작성한 문서가 없습니다. 새 페이지로 시작해보세요.
         </p>
       ) : (
         <ul className="divide-y">

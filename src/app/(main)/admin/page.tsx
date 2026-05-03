@@ -41,6 +41,7 @@ import { toast } from '@/components/ui/use-toast';
 import { toastError } from '@/lib/toast-error';
 import { downloadBlob } from '@/lib/download';
 import { cn } from '@/lib/utils';
+import { ImportSection } from '@/components/admin/import-section';
 
 interface TagRow {
   id: string;
@@ -77,6 +78,7 @@ export default function AdminPage() {
         <TabsList>
           <TabsTrigger value="tags">태그 관리 (FR-805)</TabsTrigger>
           <TabsTrigger value="export">백업 / 내보내기 (NFR-204)</TabsTrigger>
+          <TabsTrigger value="import">가져오기 (FR-808)</TabsTrigger>
           <TabsTrigger value="audit">감사 로그 (NFR-304)</TabsTrigger>
           <TabsTrigger value="orphans">고아 첨부 정리 (FR-1103)</TabsTrigger>
         </TabsList>
@@ -87,6 +89,10 @@ export default function AdminPage() {
 
         <TabsContent value="export">
           <ExportSection />
+        </TabsContent>
+
+        <TabsContent value="import">
+          <ImportSection />
         </TabsContent>
 
         <TabsContent value="audit">

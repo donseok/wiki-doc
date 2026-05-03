@@ -25,7 +25,7 @@ export default async function BoardsPage() {
       </p>
 
       {boards.length === 0 ? (
-        <p className="text-sm text-muted-foreground">보드가 없습니다.</p>
+        <p className="text-sm text-muted-foreground">보드가 없습니다. 새 보드를 만들어보세요.</p>
       ) : (
         <ul className="grid gap-3 md:grid-cols-2">
           {boards.map((b) => (

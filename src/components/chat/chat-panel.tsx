@@ -135,7 +135,7 @@ export function ChatPanel() {
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-sm font-semibold">PI Wiki 챗봇</h2>
+              <h2 className="truncate text-sm font-semibold">Atlas 챗봇</h2>
               <p className="truncate text-xs text-muted-foreground">
                 {currentPageId ? '현재 문서 우선 검색' : '전체 위키 검색'}
               </p>

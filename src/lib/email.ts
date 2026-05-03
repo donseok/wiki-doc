@@ -76,7 +76,7 @@ export function resolveEmail(userName: string): string | null {
 export async function sendEmail(opts: EmailOptions): Promise<boolean> {
   const t = getTransporter();
   if (!t) return false;
-  const from = process.env.SMTP_FROM || 'PI Wiki <noreply@example.com>';
+  const from = process.env.SMTP_FROM || 'Atlas <noreply@example.com>';
   try {
     await t.sendMail({
       from,
@@ -116,14 +116,14 @@ export async function maybeSendEmailForNotification(opts: {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const link = pageId ? `${appUrl}/pages/${pageId}` : appUrl;
 
-  const subject = `[PI Wiki] ${labelOfType(opts.type)}: ${truncate(message, 60)}`;
+  const subject = `[Atlas] ${labelOfType(opts.type)}: ${truncate(message, 60)}`;
   const text = `${message}\n\n${link}`;
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;line-height:1.6">
       <p>${escapeHtml(message)}</p>
       <p><a href="${link}" style="color:#4f46e5">${link}</a></p>
       <hr style="border:0;border-top:1px solid #e5e7eb;margin:16px 0" />
-      <p style="font-size:11px;color:#6b7280">PI Wiki — MES/APS PI 지식 허브</p>
+      <p style="font-size:11px;color:#6b7280">Atlas — 사내 시스템 지식의 지도</p>
     </div>
   `;
 

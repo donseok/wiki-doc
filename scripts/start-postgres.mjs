@@ -33,7 +33,7 @@ const pg = new EmbeddedPostgres({
 const isInitialized = existsSync(join(dataDir, 'PG_VERSION'));
 
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('PI Wiki — Embedded PostgreSQL');
+console.log('Atlas — Embedded PostgreSQL');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log(`데이터 디렉터리: ${dataDir}`);
 

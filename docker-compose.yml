@@ -1,7 +1,7 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: pi-wiki-postgres
+    container_name: atlas-wiki-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: piwiki
@@ -28,11 +28,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: pi-wiki-app
+    container_name: atlas-wiki-app
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://piwiki:piwiki@postgres:5432/piwiki?schema=public
-      NEXT_PUBLIC_APP_NAME: "PI Wiki"
+      NEXT_PUBLIC_APP_NAME: "Atlas"
+      NEXT_PUBLIC_APP_NAME_KO: "아틀라스"
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
       EDIT_LOCK_TIMEOUT_MINUTES: 5
       EDIT_LOCK_HEARTBEAT_SECONDS: 60

@@ -1,11 +1,13 @@
-# PI Wiki
+# Atlas (아틀라스)
 
-**MES / APS PI — 위키 기반 지식 허브**
+**사내 IT 시스템 지식의 지도 — 위키 기반 통합 문서 허브**
 
-요구사항 정의서 v1.3 기반의 점진적 개발 프로젝트. 1차 4주(스프린트 4회)로 30명 규모 사내 PI 활동을 지원하는 위키 + 칸반 + 화이트보드 통합 시스템을 구축한다.
+MES / APS / ERP / CRM 등 사내 IT 시스템 문서를 한 곳에서 관리하기 위한 위키 + 칸반 + 화이트보드 통합 시스템. 요구사항 정의서 v1.3(원래 PI 활동 지원용으로 작성)을 기반으로 출범했으며, 점진적 도메인 범용화를 통해 사내 IT 일반으로 적용 범위를 확장하고 있다. 30명 규모 / 4주 / 스프린트 4회로 1차 출하.
 
-> 📄 전체 요구사항: [PI_Wiki_요구사항정의서_v1.3.md](./PI_Wiki_요구사항정의서_v1.3.md)
+> 📄 전체 요구사항: [PI_Wiki_요구사항정의서_v1.3.md](./PI_Wiki_요구사항정의서_v1.3.md) (이력 보존을 위해 원래 파일명 유지)
 > 📐 기여자/AI 가이드: [CLAUDE.md](./CLAUDE.md)
+>
+> ※ 구 명칭 "PI Wiki" 는 Round 3(2026-05-03) 리브랜딩으로 **Atlas** 로 변경되었습니다. 데이터베이스 사용자/스키마명 `piwiki` 와 일부 localStorage 키(`pi-wiki:*`)는 운영 데이터 호환성을 위해 그대로 유지됩니다.
 
 ---
 
@@ -24,7 +26,10 @@ npm install
 ### 3) 환경 변수
 `.env` 파일이 이미 생성되어 있습니다. 필요 시 수정:
 ```env
+# DB 사용자/스키마명 piwiki 는 운영 호환성을 위해 보존
 DATABASE_URL="postgresql://piwiki:piwiki@localhost:5432/piwiki?schema=public"
+NEXT_PUBLIC_APP_NAME="Atlas"
+NEXT_PUBLIC_APP_NAME_KO="아틀라스"
 EDIT_LOCK_TIMEOUT_MINUTES=5
 DEFAULT_USER_NAME="익명"
 OPENAI_API_KEY=""
@@ -52,7 +57,7 @@ npm run docker:logs
 # 스키마 적용
 npm run db:migrate
 
-# PI 기본 트리 + 페이지 템플릿 10종 + 기본 보드 시드
+# 기본 트리(PI 예시 + ERP/CRM/사내IT 예시) + 페이지 템플릿 10종 + 기본 보드 시드
 npm run db:seed
 ```
 
@@ -77,7 +82,7 @@ npm run dev
 | `npm run db:migrate` | 개발 마이그레이션 (`prisma migrate dev`) |
 | `npm run db:migrate:deploy` | 프로덕션 마이그레이션 |
 | `npm run db:push` | 스키마 강제 동기화 (마이그레이션 미생성) |
-| `npm run db:seed` | 초기 시드 (PI 트리/템플릿/보드) |
+| `npm run db:seed` | 초기 시드 (PI/ERP/CRM/사내IT 예시 트리·템플릿·보드) |
 | `npm run db:studio` | Prisma Studio (브라우저 DB 탐색기) |
 | `npm run db:reset` | DB 리셋 + 재시드 |
 | `npm run docker:up` | PostgreSQL 컨테이너 기동 |
@@ -95,7 +100,7 @@ wiki-doc/
 │   └── postgres-data/           # DB 볼륨 (gitignore)
 ├── prisma/
 │   ├── schema.prisma            # 전 엔티티 정의 (24개)
-│   └── seed.ts                  # PI 기본 트리 + 템플릿 시드
+│   └── seed.ts                  # 기본 트리(PI/ERP/CRM/사내IT 예시) + 템플릿 시드
 ├── src/
 │   ├── app/
 │   │   ├── (main)/              # 3-Column 레이아웃이 적용되는 라우트
@@ -141,7 +146,7 @@ wiki-doc/
 │   │   ├── current-user.ts
 │   │   └── utils.ts                     # cn(), formatBytes()
 │   ├── server/
-│   │   ├── pi-default-tree.ts           # FR-104 기본 메뉴 구조
+│   │   ├── pi-default-tree.ts           # FR-104 기본 메뉴 구조 (PI 예시 + EXTRA_SAMPLE_WORKSPACES)
 │   │   └── default-templates.ts         # FR-211 기본 10종 템플릿
 │   └── types/index.ts
 ├── docker-compose.yml
@@ -218,6 +223,7 @@ wiki-doc/
 
 ### 시드 보강
 - 자유 작업공간 폴더 하위에 **샘플 화이트보드** 자동 생성
+- Round 3(2026-05-03) 도메인 범용화: PI 예시 트리는 "샘플 워크스페이스 - PI 활동 (MES/APS)" 폴더로 격상되고, **ERP 도입 영역(예시) / CRM 운영(예시) / 사내 IT 일반(예시)** 워크스페이스가 시드에 추가됨
 
 ---
 
@@ -385,5 +391,5 @@ Compress-Archive -Path docker/uploads -DestinationPath backups/uploads-$(Get-Dat
 
 ## 라이선스 / 기여
 
-- 사내 PI TF 전용 시스템.
+- 사내 IT 시스템 문서 관리 전용. 도입 부서별로 자유롭게 워크스페이스를 추가할 수 있다.
 - 코드 작성 가이드는 [CLAUDE.md](./CLAUDE.md) 참조.

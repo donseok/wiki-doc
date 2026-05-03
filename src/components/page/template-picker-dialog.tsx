@@ -103,7 +103,7 @@ export function TemplatePickerDialog({ open, onOpenChange, parentId, onCreated }
               id="page-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="예: 2026-05-03 PI 킥오프 회의록"
+              placeholder="예: 2026-05-03 주간 회의록"
               autoFocus
             />
           </div>
