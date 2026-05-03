@@ -23,11 +23,11 @@ const STATUS_LABEL: Record<PageStatus, string> = {
 };
 
 const STATUS_BAR: Record<PageStatus, string> = {
-  Draft: 'bg-slate-400',
-  Review: 'bg-blue-400',
-  Approved: 'bg-emerald-400',
-  Pending: 'bg-amber-400',
-  Archived: 'bg-zinc-400',
+  Draft: 'bg-slate-400 dark:bg-slate-500',
+  Review: 'bg-blue-400 dark:bg-blue-500',
+  Approved: 'bg-emerald-400 dark:bg-emerald-500',
+  Pending: 'bg-amber-400 dark:bg-amber-500',
+  Archived: 'bg-zinc-400 dark:bg-zinc-500',
 };
 
 const DAYS = 7;

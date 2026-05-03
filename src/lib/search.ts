@@ -196,9 +196,6 @@ export async function searchPages(filters: SearchFilters): Promise<SearchHit[]> 
   }));
 }
 
-/** 별칭 — 기존 호출자 호환 */
-export const searchPagesWithSimilarity = searchPages;
-
 /* ------------------------------------------------------------------ */
 /* 헬퍼: SQL fragment 빌더                                              */
 /* ------------------------------------------------------------------ */

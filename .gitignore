@@ -57,3 +57,5 @@ logs
 # Claude Code workspace artifacts
 /dev-server.log
 /.claude/
+/_workspace/
+/_workspace_*/

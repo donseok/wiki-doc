@@ -138,9 +138,6 @@
     backdrop-filter: blur(20px) saturate(1.5);
     -webkit-backdrop-filter: blur(20px) saturate(1.5);
   }
-  .shadow-card {
-    box-shadow: var(--shadow-md);
-  }
   .shadow-elevated {
     box-shadow: var(--shadow-lg);
   }
@@ -243,11 +240,6 @@
   @apply h-4 w-4 rounded-[4px] border-2 border-border accent-primary mr-2;
 }
 
-/* ─── Tree menu styles ─── */
-.tree-node-active {
-  @apply bg-accent text-accent-foreground font-medium;
-}
-
 /* ─── TipTap editor overrides ─── */
 .ProseMirror {
   @apply outline-none min-h-[200px] leading-[1.8];
@@ -263,12 +255,3 @@
   @apply rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary text-sm;
 }
 
-/* ─── Status dot (used in sidebar tree) ─── */
-.status-dot {
-  @apply h-1.5 w-1.5 rounded-full;
-}
-.status-dot--draft    { @apply bg-status-draft; }
-.status-dot--review   { @apply bg-status-review; animation: pulse-dot 2s infinite; }
-.status-dot--approved { @apply bg-status-approved; }
-.status-dot--pending  { @apply bg-status-pending; animation: pulse-dot 1.5s infinite; }
-.status-dot--archived { @apply bg-status-archived; }

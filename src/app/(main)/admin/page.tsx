@@ -543,7 +543,7 @@ function AuditLogSection() {
           <Input
             value={entity}
             onChange={(e) => setEntity(e.target.value)}
-            placeholder="Page, Tag, Template..."
+            placeholder="예: Page, Tag, Template"
             className="h-8 text-sm"
           />
         </div>
@@ -552,7 +552,7 @@ function AuditLogSection() {
           <Input
             value={action}
             onChange={(e) => setAction(e.target.value)}
-            placeholder="create, update, delete..."
+            placeholder="예: create, update, delete"
             className="h-8 text-sm"
           />
         </div>

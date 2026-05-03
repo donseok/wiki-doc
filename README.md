@@ -127,9 +127,8 @@ wiki-doc/
 │   ├── components/
 │   │   ├── ui/                          # shadcn 스타일 primitive (Button, Dialog 등)
 │   │   ├── layout/                      # Header, Sidebar
-│   │   ├── tree/                        # TreeMenu (재귀)
+│   │   ├── tree/                        # SortableTreeMenu (@dnd-kit DnD)
 │   │   ├── page/                        # PageHeader, MarkdownView, EditLockBanner ...
-│   │   ├── editor/markdown-editor.tsx   # Sprint 1 마크다운 에디터
 │   │   ├── attachments/README.md        # PDF.js, SheetJS 통합 가이드
 │   │   ├── whiteboard/README.md         # tldraw 통합 가이드
 │   │   └── markdown/mermaid.tsx         # Mermaid 렌더 (FR-214)

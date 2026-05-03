@@ -24,11 +24,16 @@ const STATUS_LABEL: Record<PageStatus, string> = {
 };
 
 const STATUS_COLOR: Record<PageStatus, string> = {
-  Draft: 'border-slate-300 bg-slate-50 text-slate-700',
-  Review: 'border-blue-300 bg-blue-50 text-blue-800',
-  Approved: 'border-emerald-300 bg-emerald-50 text-emerald-800',
-  Pending: 'border-amber-300 bg-amber-50 text-amber-900',
-  Archived: 'border-zinc-300 bg-zinc-50 text-zinc-600',
+  Draft:
+    'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-400',
+  Review:
+    'border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  Approved:
+    'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  Pending:
+    'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  Archived:
+    'border-zinc-300 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400',
 };
 
 export async function MyPagesWidget({ currentUser }: Props) {

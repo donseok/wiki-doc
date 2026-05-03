@@ -53,25 +53,29 @@ const STATUS_META: Record<
     label: '제안',
     icon: <Lightbulb className="h-4 w-4" />,
     bandClass: 'bg-zinc-300 dark:bg-zinc-600',
-    badgeClass: 'border-zinc-300 bg-zinc-50 text-zinc-700',
+    badgeClass:
+      'border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300',
   },
   Accepted: {
     label: '승인',
     icon: <CheckCircle2 className="h-4 w-4" />,
     bandClass: 'bg-emerald-500',
-    badgeClass: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+    badgeClass:
+      'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   },
   Rejected: {
     label: '반려',
     icon: <XCircle className="h-4 w-4" />,
     bandClass: 'bg-rose-500',
-    badgeClass: 'border-rose-200 bg-rose-50 text-rose-700',
+    badgeClass:
+      'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   },
   Superseded: {
     label: '대체',
     icon: <ArrowRightCircle className="h-4 w-4" />,
     bandClass: 'bg-amber-400',
-    badgeClass: 'border-amber-200 bg-amber-50 text-amber-700',
+    badgeClass:
+      'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   },
 };
 

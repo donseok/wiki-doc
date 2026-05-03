@@ -39,22 +39,26 @@ const STATUS_META: Record<
   Proposed: {
     label: '제안',
     icon: <Lightbulb className="h-4 w-4" />,
-    cardClass: 'border-zinc-200 bg-zinc-50 text-zinc-800',
+    cardClass:
+      'border-zinc-200 bg-zinc-50 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300',
   },
   Accepted: {
     label: '승인',
     icon: <CheckCircle2 className="h-4 w-4" />,
-    cardClass: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    cardClass:
+      'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   },
   Rejected: {
     label: '반려',
     icon: <XCircle className="h-4 w-4" />,
-    cardClass: 'border-rose-200 bg-rose-50 text-rose-800',
+    cardClass:
+      'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
   },
   Superseded: {
     label: '대체',
     icon: <ArrowRightCircle className="h-4 w-4" />,
-    cardClass: 'border-amber-200 bg-amber-50 text-amber-800',
+    cardClass:
+      'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   },
 };
 
