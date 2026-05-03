@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
   Star,
-  Clock,
   FolderTree,
   KanbanSquare,
   Tags,
@@ -69,7 +68,6 @@ function useSidebarCollapse() {
 export function Sidebar() {
   const [nodes, setNodes] = useState<TreeNodeData[]>([]);
   const [filter, setFilter] = useState('');
-  const [recent, setRecent] = useState<{ id: string; title: string }[]>([]);
   const [favorites, setFavorites] = useState<{ id: string; title: string }[]>([]);
   const { collapsed, toggle, setCollapsed } = useSidebarCollapse();
 
@@ -82,9 +80,7 @@ export function Sidebar() {
   useEffect(() => {
     refresh();
     if (typeof window !== 'undefined') {
-      const r = JSON.parse(localStorage.getItem('pi-wiki:recent') || '[]');
       const f = JSON.parse(localStorage.getItem('pi-wiki:favorites') || '[]');
-      setRecent(r);
       setFavorites(f);
     }
   }, []);
@@ -144,23 +140,6 @@ export function Sidebar() {
                     >
                       <Star className="h-3 w-3 shrink-0 fill-amber-400 text-amber-400" />
                       <span className="truncate">{f.title}</span>
-                    </Link>
-                  ))}
-                </div>
-              </Section>
-            )}
-
-            {recent.length > 0 && (
-              <Section icon={<Clock className="h-3 w-3 text-blue-500" />} title="최근 본 글">
-                <div className="space-y-0.5">
-                  {recent.slice(0, 7).map((r) => (
-                    <Link
-                      key={r.id}
-                      href={`/pages/${r.id}`}
-                      className="flex items-center gap-2 truncate rounded-lg px-2.5 py-1.5 text-[13px] text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-foreground"
-                    >
-                      <Clock className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-                      <span className="truncate">{r.title}</span>
                     </Link>
                   ))}
                 </div>
