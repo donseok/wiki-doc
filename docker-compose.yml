@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: pi-wiki-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: piwiki
+      POSTGRES_PASSWORD: piwiki
+      POSTGRES_DB: piwiki
+      TZ: Asia/Seoul
+      LANG: ko_KR.UTF-8
+      LC_ALL: ko_KR.UTF-8
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U piwiki -d piwiki"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 1차 운영 시 활성화. 개발 단계에서는 next dev 로 충분.
+  # 사용 시: docker compose --profile app up -d
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pi-wiki-app
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://piwiki:piwiki@postgres:5432/piwiki?schema=public
+      NEXT_PUBLIC_APP_NAME: "PI Wiki"
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+      EDIT_LOCK_TIMEOUT_MINUTES: 5
+      EDIT_LOCK_HEARTBEAT_SECONDS: 60
+      UPLOAD_DIR: "/data/uploads"
+      MAX_IMAGE_SIZE_MB: 10
+      MAX_FILE_SIZE_MB: 50
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_MODEL: "${OPENAI_MODEL:-gpt-5.5}"
+      OPENAI_EMBEDDING_MODEL: "${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}"
+      OPENAI_EMBEDDING_DIMENSIONS: "${OPENAI_EMBEDDING_DIMENSIONS:-1536}"
+      MAX_CHAT_CONTEXT_CHARS: "${MAX_CHAT_CONTEXT_CHARS:-16000}"
+      AI_AUTO_INDEX_ON_SAVE: "${AI_AUTO_INDEX_ON_SAVE:-false}"
+      DEFAULT_USER_NAME: "익명"
+      LOG_LEVEL: "info"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./docker/uploads:/data/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy

@@ -1,0 +1,97 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+
+    /* PI Wiki status colors */
+    --status-draft: 215 16% 47%;       /* slate */
+    --status-review: 32 95% 50%;       /* amber */
+    --status-approved: 142 71% 45%;    /* emerald */
+    --status-pending: 0 84% 60%;       /* red */
+    --status-archived: 220 9% 46%;     /* gray */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --status-draft: 215 14% 65%;
+    --status-review: 32 95% 60%;
+    --status-approved: 142 71% 55%;
+    --status-pending: 0 84% 70%;
+    --status-archived: 220 9% 55%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
+      'Pretendard', 'Noto Sans KR', sans-serif;
+  }
+}
+
+/* Prose for markdown rendering */
+.pi-prose {
+  @apply max-w-none leading-7;
+}
+.pi-prose h1 { @apply text-3xl font-bold mt-8 mb-4 pb-2 border-b; }
+.pi-prose h2 { @apply text-2xl font-semibold mt-6 mb-3; }
+.pi-prose h3 { @apply text-xl font-semibold mt-5 mb-2; }
+.pi-prose h4 { @apply text-lg font-semibold mt-4 mb-2; }
+.pi-prose p  { @apply my-3; }
+.pi-prose ul { @apply list-disc pl-6 my-3 space-y-1; }
+.pi-prose ol { @apply list-decimal pl-6 my-3 space-y-1; }
+.pi-prose blockquote { @apply border-l-4 pl-4 italic text-muted-foreground my-3; }
+.pi-prose code:not(pre code) { @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono; }
+.pi-prose pre { @apply bg-muted p-4 rounded-md overflow-x-auto my-4; }
+.pi-prose pre code { @apply text-sm font-mono; }
+.pi-prose table { @apply border-collapse my-4 w-full; }
+.pi-prose th, .pi-prose td { @apply border border-border px-3 py-2 text-left; }
+.pi-prose th { @apply bg-muted font-semibold; }
+.pi-prose a { @apply text-blue-600 dark:text-blue-400 underline; }
+.pi-prose hr { @apply my-6 border-border; }
+.pi-prose img { @apply rounded-md my-4 max-w-full; }
+
+/* Tree menu styles */
+.tree-node-active { @apply bg-accent text-accent-foreground; }

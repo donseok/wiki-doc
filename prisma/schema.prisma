@@ -1,0 +1,519 @@
+// PI Wiki Prisma Schema
+// 요구사항 정의서 v1.3 §6 데이터 모델 기반
+// pgvector / pg_bigm 확장은 docker/postgres/init.sql 에서 활성화한다.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  // 1차: vector 확장은 NFR-504 인프라 준비. embedded-postgres 데모 환경에는 미포함이므로 일시 제거.
+  // 운영 환경(docker-compose pgvector/pgvector:pg16)에서는 [vector, pg_trgm, btree_gin] 으로 복원.
+  extensions = [pg_trgm, btree_gin]
+}
+
+// =====================================================================
+// Enums
+// =====================================================================
+
+enum NodeType {
+  folder
+  page
+  whiteboard
+}
+
+enum PageStatus {
+  Draft
+  Review
+  Approved
+  Pending
+  Archived
+}
+
+enum DecisionStatus {
+  Proposed
+  Accepted
+  Rejected
+  Superseded
+}
+
+enum AttachmentFileType {
+  image
+  pdf
+  excel
+  word
+  ppt
+  zip
+  text
+  other
+}
+
+enum WhiteboardElementType {
+  sticky
+  text
+  shape
+  arrow
+  sticker
+  frame
+}
+
+enum NotificationType {
+  mention
+  comment
+  pending_decision
+  status_change
+  page_updated
+}
+
+// =====================================================================
+// 1. Tree / Page
+// =====================================================================
+
+model TreeNode {
+  id        String    @id @default(cuid())
+  parentId  String?
+  parent    TreeNode? @relation("TreeNodeParent", fields: [parentId], references: [id], onDelete: Cascade)
+  children  TreeNode[] @relation("TreeNodeParent")
+
+  type      NodeType  @default(page)
+  title     String
+  order     Int       @default(0)
+  icon      String?
+
+  page       Page?
+  whiteboard Whiteboard?
+  watches    PageWatch[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([parentId, order])
+  @@index([type])
+}
+
+/// 페이지 본문 — TreeNode 1:1
+/// FR-201/202 (리치텍스트/마크다운), FR-207 (메타정보), FR-401 (자동 버전 저장)
+model Page {
+  id              String     @id @default(cuid())
+  treeNodeId      String     @unique
+  treeNode        TreeNode   @relation(fields: [treeNodeId], references: [id], onDelete: Cascade)
+
+  contentJson     Json?
+  contentMarkdown String     @default("")
+  status          PageStatus @default(Draft)
+  authorName      String     @default("익명")
+  pendingReason   String?    // FR-705 Pending 사유
+
+  /// NFR-504 벡터 검색 인프라 — pgvector 환경에서만 활성. embedded 데모에서는 컬럼 제거.
+  // embedding       Unsupported("vector(1536)")?
+
+  versions        PageVersion[]
+  chunks          PageChunk[]
+  tags            PageTag[]
+  comments        Comment[]
+  attachments     Attachment[]
+  decisions       Decision[]
+  actionItems     ActionItem[]
+  watches         PageWatch[]
+  readReceipts    ReadReceipt[]
+  editSessions    EditSession[]
+  cardLinks       Card[]
+  conversions     WhiteboardConversion[]
+  statusHistory   PageStatusLog[]
+
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([status])
+  @@index([authorName])
+  @@index([updatedAt])
+}
+
+/// 챗봇/RAG 검색용 페이지 청크.
+/// Prisma 스키마는 휴대성을 위해 메타/본문 컬럼만 정의한다.
+/// pgvector 환경에서는 src/lib/chat/page-index.ts 가 embedding vector(1536) 컬럼과 벡터 인덱스를 raw SQL 로 추가한다.
+model PageChunk {
+  id            String   @id
+  pageId        String
+  page          Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  treeNodeId    String
+  title         String
+  heading       String?
+  chunkIndex    Int
+  content       String
+  contentHash   String
+  tokenEstimate Int      @default(0)
+  embeddedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([pageId, chunkIndex])
+  @@index([pageId])
+  @@index([treeNodeId])
+  @@index([contentHash])
+}
+
+/// FR-401~405 버전 이력
+model PageVersion {
+  id           String   @id @default(cuid())
+  pageId       String
+  page         Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionNo    Int
+  contentJson  Json?
+  contentMarkdown String  @default("")
+  summary      String?
+  authorName   String   @default("익명")
+  label        String?  // FR-405 버전 라벨
+  createdAt    DateTime @default(now())
+
+  @@unique([pageId, versionNo])
+  @@index([pageId, createdAt])
+}
+
+/// FR-703 상태 변경 이력 (감사용)
+model PageStatusLog {
+  id          String     @id @default(cuid())
+  pageId      String
+  page        Page       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  fromStatus  PageStatus?
+  toStatus    PageStatus
+  changedBy   String     @default("익명")
+  note        String?
+  changedAt   DateTime   @default(now())
+
+  @@index([pageId, changedAt])
+}
+
+// =====================================================================
+// 2. Edit Lock (FR-215/216) — v1.3 신규
+// =====================================================================
+
+model EditSession {
+  id              String   @id @default(cuid())
+  pageId          String
+  page            Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  editorName      String
+  startedAt       DateTime @default(now())
+  expiresAt       DateTime
+  lastActivityAt  DateTime @default(now())
+  forceReleased   Boolean  @default(false)
+  forceReleasedBy String?
+
+  @@unique([pageId])     // 한 페이지당 1개의 활성 Lock
+  @@index([editorName])
+  @@index([expiresAt])
+}
+
+// =====================================================================
+// 3. Tag
+// =====================================================================
+
+model Tag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  color     String?
+  pages     PageTag[]
+  createdAt DateTime  @default(now())
+}
+
+model PageTag {
+  pageId String
+  tagId  String
+  page   Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId],  references: [id], onDelete: Cascade)
+
+  @@id([pageId, tagId])
+  @@index([tagId])
+}
+
+// =====================================================================
+// 4. Comment (FR-501~508)
+// =====================================================================
+
+model Comment {
+  id          String    @id @default(cuid())
+  pageId      String
+  page        Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  parentId    String?
+  parent      Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentThread")
+  anchorRange Json?     // FR-502 본문 인라인 코멘트의 텍스트 범위
+  body        String
+  authorName  String    @default("익명")
+  resolved    Boolean   @default(false)
+  reactions   Json?     // FR-506 이모지 반응 ({ "👍": ["a","b"], ... })
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([pageId, createdAt])
+  @@index([parentId])
+  @@index([resolved])
+}
+
+// =====================================================================
+// 5. Decision (FR-507/508) — v1.1 신규
+// =====================================================================
+
+model Decision {
+  id          String         @id @default(cuid())
+  pageId      String
+  page        Page           @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  blockId     String         // 본문 내 위치 식별자
+  title       String
+  context     String?
+  options     Json?          // 검토 옵션
+  decision    String?
+  rationale   String?
+  owner       String?
+  status      DecisionStatus @default(Proposed)
+  decidedAt   DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  statusLogs  DecisionStatusLog[]
+
+  @@unique([pageId, blockId])
+  @@index([status])
+  @@index([owner])
+}
+
+model DecisionStatusLog {
+  id          String          @id @default(cuid())
+  decisionId  String
+  decision    Decision        @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+  fromStatus  DecisionStatus?
+  toStatus    DecisionStatus
+  changedBy   String          @default("익명")
+  note        String?
+  changedAt   DateTime        @default(now())
+
+  @@index([decisionId, changedAt])
+}
+
+// =====================================================================
+// 6. Action Item (FR-1007) — v1.1 신규
+// =====================================================================
+
+model ActionItem {
+  id          String    @id @default(cuid())
+  pageId      String
+  page        Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  blockId     String
+  content     String
+  assignee    String?   // 멘션 대상
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([assignee, completed])
+  @@index([pageId])
+}
+
+// =====================================================================
+// 7. Watch / ReadReceipt (FR-905/906)
+// =====================================================================
+
+model PageWatch {
+  id              String   @id @default(cuid())
+  pageId          String?
+  page            Page?    @relation(fields: [pageId],  references: [id], onDelete: Cascade)
+  treeNodeId      String?
+  treeNode        TreeNode? @relation(fields: [treeNodeId], references: [id], onDelete: Cascade)
+  watcherName     String
+  includeChildren Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@unique([watcherName, pageId])
+  @@unique([watcherName, treeNodeId])
+  @@index([watcherName])
+}
+
+model ReadReceipt {
+  id         String   @id @default(cuid())
+  pageId     String
+  page       Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  readerName String
+  readAt     DateTime @default(now())
+
+  @@unique([pageId, readerName])
+  @@index([readerName])
+}
+
+// =====================================================================
+// 8. Board (Kanban 아이디어 보드, FR-601~608)
+// =====================================================================
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  cards       Card[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Card {
+  id           String   @id @default(cuid())
+  boardId      String
+  board        Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  column       String   // Idea | Discussing | Pending | Resolved (사용자 정의 컬럼 가능)
+  title        String
+  body         String?
+  color        String?  // FR-604 카드 색상
+  order        Int      @default(0)
+  authorName   String   @default("익명")
+  linkedPageId String?
+  linkedPage   Page?    @relation(fields: [linkedPageId], references: [id], onDelete: SetNull)
+  comments     CardComment[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([boardId, column, order])
+}
+
+model CardComment {
+  id         String   @id @default(cuid())
+  cardId     String
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  body       String
+  authorName String   @default("익명")
+  createdAt  DateTime @default(now())
+
+  @@index([cardId, createdAt])
+}
+
+// =====================================================================
+// 9. Attachment (FR-1101~1109) — v1.3 확장
+// =====================================================================
+
+model Attachment {
+  id           String              @id @default(cuid())
+  filename     String
+  mimeType     String
+  fileType     AttachmentFileType  @default(other)
+  path         String              // UPLOAD_DIR 기준 상대 경로
+  size         Int
+  pageId       String?
+  page         Page?               @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  uploaderName String              @default("익명")
+  createdAt    DateTime            @default(now())
+
+  @@index([pageId])
+  @@index([fileType])
+  @@index([filename])
+}
+
+// =====================================================================
+// 10. Notification / AuditLog
+// =====================================================================
+
+model Notification {
+  id        String           @id @default(cuid())
+  recipient String
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([recipient, readAt])
+  @@index([recipient, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  entity    String
+  entityId  String
+  action    String
+  before    Json?
+  after     Json?
+  actor     String   @default("익명")
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([actor, createdAt])
+}
+
+// =====================================================================
+// 11. Template (FR-211~213) — v1.1 신규
+// =====================================================================
+
+model Template {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String?
+  contentJson Json?
+  contentMarkdown String  @default("")
+  variables   Json?    // [{ name: "date", description: "오늘 날짜" }, ...]
+  icon        String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([isSystem])
+}
+
+// =====================================================================
+// 12. Whiteboard (FR-1201~1213) — v1.2 신규
+// =====================================================================
+
+model Whiteboard {
+  id           String                 @id @default(cuid())
+  treeNodeId   String                 @unique
+  treeNode     TreeNode               @relation(fields: [treeNodeId], references: [id], onDelete: Cascade)
+  title        String
+  viewportJson Json?                  // zoom/pan 상태
+  elements     WhiteboardElement[]
+  conversions  WhiteboardConversion[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+}
+
+model WhiteboardElement {
+  id            String                 @id @default(cuid())
+  whiteboardId  String
+  whiteboard    Whiteboard             @relation(fields: [whiteboardId], references: [id], onDelete: Cascade)
+  type          WhiteboardElementType
+  x             Float
+  y             Float
+  width         Float
+  height        Float
+  contentJson   Json?
+  parentFrameId String?
+  parentFrame   WhiteboardElement?     @relation("FrameChildren", fields: [parentFrameId], references: [id], onDelete: SetNull)
+  children      WhiteboardElement[]    @relation("FrameChildren")
+  zIndex        Int                    @default(0)
+  votes         WhiteboardVote[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([whiteboardId, zIndex])
+  @@index([parentFrameId])
+}
+
+model WhiteboardVote {
+  id         String            @id @default(cuid())
+  elementId  String
+  element    WhiteboardElement @relation(fields: [elementId], references: [id], onDelete: Cascade)
+  voterName  String
+  createdAt  DateTime          @default(now())
+
+  @@unique([elementId, voterName])
+}
+
+model WhiteboardConversion {
+  id           String     @id @default(cuid())
+  whiteboardId String
+  whiteboard   Whiteboard @relation(fields: [whiteboardId], references: [id], onDelete: Cascade)
+  pageId       String
+  page         Page       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  convertedAt  DateTime   @default(now())
+  convertedBy  String     @default("익명")
+  note         String?
+}
