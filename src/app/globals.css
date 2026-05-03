@@ -1,97 +1,274 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ─── Modern Indigo Theme ─── */
+    --background: 220 20% 97%;
+    --foreground: 224 30% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 224 30% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
+    --popover-foreground: 224 30% 12%;
+    --primary: 238 60% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 226 22% 94%;
+    --secondary-foreground: 224 30% 18%;
+    --muted: 224 16% 94%;
+    --muted-foreground: 224 12% 48%;
+    --accent: 238 60% 96%;
+    --accent-foreground: 238 60% 40%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 224 16% 90%;
+    --input: 224 16% 88%;
+    --ring: 238 60% 55%;
+    --radius: 0.625rem;
 
-    /* PI Wiki status colors */
-    --status-draft: 215 16% 47%;       /* slate */
-    --status-review: 32 95% 50%;       /* amber */
-    --status-approved: 142 71% 45%;    /* emerald */
-    --status-pending: 0 84% 60%;       /* red */
-    --status-archived: 220 9% 46%;     /* gray */
+    /* ─── Sidebar ─── */
+    --sidebar: 228 22% 96%;
+    --sidebar-foreground: 224 25% 25%;
+    --sidebar-accent: 238 60% 95%;
+
+    /* ─── Status (semantic) ─── */
+    --status-draft: 224 10% 56%;
+    --status-review: 36 90% 50%;
+    --status-approved: 152 60% 42%;
+    --status-pending: 4 80% 58%;
+    --status-archived: 224 8% 52%;
+
+    /* ─── Elevation shadows ─── */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .04);
+    --shadow-md: 0 2px 8px -1px rgb(0 0 0 / .06), 0 1px 3px -1px rgb(0 0 0 / .04);
+    --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / .08), 0 2px 6px -2px rgb(0 0 0 / .04);
+    --shadow-glow: 0 0 0 1px rgb(99 102 241 / .08), 0 2px 12px -2px rgb(99 102 241 / .12);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 228 22% 8%;
+    --foreground: 220 16% 92%;
+    --card: 228 22% 10%;
+    --card-foreground: 220 16% 92%;
+    --popover: 228 22% 11%;
+    --popover-foreground: 220 16% 92%;
+    --primary: 238 68% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 228 22% 15%;
+    --secondary-foreground: 220 16% 88%;
+    --muted: 228 20% 16%;
+    --muted-foreground: 224 14% 56%;
+    --accent: 238 40% 18%;
+    --accent-foreground: 238 68% 78%;
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 228 18% 18%;
+    --input: 228 18% 16%;
+    --ring: 238 68% 65%;
 
-    --status-draft: 215 14% 65%;
-    --status-review: 32 95% 60%;
-    --status-approved: 142 71% 55%;
-    --status-pending: 0 84% 70%;
-    --status-archived: 220 9% 55%;
+    --sidebar: 228 22% 9%;
+    --sidebar-foreground: 220 14% 70%;
+    --sidebar-accent: 238 30% 16%;
+
+    --status-draft: 224 10% 62%;
+    --status-review: 36 90% 58%;
+    --status-approved: 152 60% 52%;
+    --status-pending: 4 80% 64%;
+    --status-archived: 224 8% 55%;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / .15);
+    --shadow-md: 0 2px 8px -1px rgb(0 0 0 / .25), 0 1px 3px -1px rgb(0 0 0 / .15);
+    --shadow-lg: 0 8px 24px -4px rgb(0 0 0 / .35), 0 2px 6px -2px rgb(0 0 0 / .2);
+    --shadow-glow: 0 0 0 1px rgb(129 140 248 / .12), 0 2px 12px -2px rgb(129 140 248 / .15);
   }
 
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo',
-      'Pretendard', 'Noto Sans KR', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+      'Apple SD Gothic Neo', 'Pretendard', 'Noto Sans KR', sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-border;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+
+  /* Better focus rings */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: var(--radius);
   }
 }
 
-/* Prose for markdown rendering */
-.pi-prose {
-  @apply max-w-none leading-7;
+/* ─── Utility classes ─── */
+@layer utilities {
+  .glass {
+    @apply bg-background/80 backdrop-blur-xl;
+  }
+  .glass-card {
+    @apply rounded-xl border bg-card/90 backdrop-blur-lg;
+    box-shadow: var(--shadow-md);
+  }
+  .glass-sidebar {
+    background: hsl(var(--sidebar) / .92);
+    backdrop-filter: blur(20px) saturate(1.5);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-md);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-lg);
+  }
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  .hover-lift {
+    @apply transition-all duration-200 ease-out;
+  }
+  .hover-lift:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+  }
+  .animate-slide-up {
+    animation: slide-up 0.2s ease-out;
+  }
+  .animate-fade-in {
+    animation: fade-in 0.15s ease-out;
+  }
 }
-.pi-prose h1 { @apply text-3xl font-bold mt-8 mb-4 pb-2 border-b; }
-.pi-prose h2 { @apply text-2xl font-semibold mt-6 mb-3; }
-.pi-prose h3 { @apply text-xl font-semibold mt-5 mb-2; }
-.pi-prose h4 { @apply text-lg font-semibold mt-4 mb-2; }
-.pi-prose p  { @apply my-3; }
-.pi-prose ul { @apply list-disc pl-6 my-3 space-y-1; }
-.pi-prose ol { @apply list-decimal pl-6 my-3 space-y-1; }
-.pi-prose blockquote { @apply border-l-4 pl-4 italic text-muted-foreground my-3; }
-.pi-prose code:not(pre code) { @apply bg-muted px-1.5 py-0.5 rounded text-sm font-mono; }
-.pi-prose pre { @apply bg-muted p-4 rounded-md overflow-x-auto my-4; }
-.pi-prose pre code { @apply text-sm font-mono; }
-.pi-prose table { @apply border-collapse my-4 w-full; }
-.pi-prose th, .pi-prose td { @apply border border-border px-3 py-2 text-left; }
-.pi-prose th { @apply bg-muted font-semibold; }
-.pi-prose a { @apply text-blue-600 dark:text-blue-400 underline; }
-.pi-prose hr { @apply my-6 border-border; }
-.pi-prose img { @apply rounded-md my-4 max-w-full; }
 
-/* Tree menu styles */
-.tree-node-active { @apply bg-accent text-accent-foreground; }
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+/* ─── Prose for markdown rendering ─── */
+.pi-prose {
+  @apply max-w-none leading-[1.8] text-foreground/90;
+  font-size: 0.9375rem;
+}
+.pi-prose h1 {
+  @apply text-2xl font-bold mt-10 mb-4 pb-3 border-b border-border/60;
+  letter-spacing: -0.02em;
+}
+.pi-prose h2 {
+  @apply text-xl font-semibold mt-8 mb-3;
+  letter-spacing: -0.015em;
+}
+.pi-prose h3 {
+  @apply text-lg font-semibold mt-6 mb-2;
+  letter-spacing: -0.01em;
+}
+.pi-prose h4 {
+  @apply text-base font-semibold mt-5 mb-2;
+}
+.pi-prose p {
+  @apply my-3;
+}
+.pi-prose ul {
+  @apply list-disc pl-6 my-3 space-y-1.5;
+}
+.pi-prose ol {
+  @apply list-decimal pl-6 my-3 space-y-1.5;
+}
+.pi-prose blockquote {
+  @apply border-l-[3px] border-primary/30 pl-4 italic text-muted-foreground my-4 bg-accent/30 py-2 pr-3 rounded-r-lg;
+}
+.pi-prose code:not(pre code) {
+  @apply bg-primary/[.06] text-primary/90 px-1.5 py-0.5 rounded-md text-[0.8125rem] font-mono font-medium;
+}
+.pi-prose pre {
+  @apply bg-card border rounded-xl p-5 overflow-x-auto my-5;
+  box-shadow: var(--shadow-sm);
+}
+.pi-prose pre code {
+  @apply text-sm font-mono bg-transparent p-0;
+}
+.pi-prose table {
+  @apply border-collapse my-5 w-full rounded-lg overflow-hidden;
+}
+.pi-prose th,
+.pi-prose td {
+  @apply border border-border/60 px-4 py-2.5 text-left text-sm;
+}
+.pi-prose th {
+  @apply bg-muted/60 font-semibold text-xs uppercase tracking-wider text-muted-foreground;
+}
+.pi-prose a {
+  @apply text-primary font-medium underline decoration-primary/30 underline-offset-2 hover:decoration-primary/60 transition-colors;
+}
+.pi-prose hr {
+  @apply my-8 border-border/50;
+}
+.pi-prose img {
+  @apply rounded-xl my-5 max-w-full;
+  box-shadow: var(--shadow-md);
+}
+
+/* Task list checkbox in prose */
+.pi-prose input[type="checkbox"] {
+  @apply h-4 w-4 rounded-[4px] border-2 border-border accent-primary mr-2;
+}
+
+/* ─── Tree menu styles ─── */
+.tree-node-active {
+  @apply bg-accent text-accent-foreground font-medium;
+}
+
+/* ─── TipTap editor overrides ─── */
+.ProseMirror {
+  @apply outline-none min-h-[200px] leading-[1.8];
+  font-size: 0.9375rem;
+}
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground/50 float-left h-0 pointer-events-none;
+  content: attr(data-placeholder);
+}
+
+/* ─── Mention badge ─── */
+.pi-mention {
+  @apply rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary text-sm;
+}
+
+/* ─── Status dot (used in sidebar tree) ─── */
+.status-dot {
+  @apply h-1.5 w-1.5 rounded-full;
+}
+.status-dot--draft    { @apply bg-status-draft; }
+.status-dot--review   { @apply bg-status-review; animation: pulse-dot 2s infinite; }
+.status-dot--approved { @apply bg-status-approved; }
+.status-dot--pending  { @apply bg-status-pending; animation: pulse-dot 1.5s infinite; }
+.status-dot--archived { @apply bg-status-archived; }

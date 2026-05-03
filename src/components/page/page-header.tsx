@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Pencil, Eye, Star, History, MoreHorizontal, Paperclip } from 'lucide-react';
+import { ArrowLeft, Pencil, Eye, Star, History, MoreHorizontal, Paperclip, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/page/status-badge';
 import {
@@ -61,11 +61,36 @@ export function PageHeader({ page, mode, onStatusChange }: Props) {
 
   const updatedAt = (() => {
     try {
-      return format(parseISO(page.updatedAt), 'yyyy-MM-dd HH:mm');
+      return format(parseISO(page.updatedAt), 'yyyy.MM.dd HH:mm');
     } catch {
       return '';
     }
   })();
+
+  const onDuplicate = async () => {
+    const newTitle = window.prompt(
+      '복사본 페이지 제목',
+      `${page.treeNode.title} (복사본)`,
+    )?.trim();
+    if (!newTitle) return;
+    const res = await fetch(`/api/pages/${page.id}/duplicate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newTitle }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      toast({ title: '페이지 복제 완료', description: newTitle });
+      if (json?.data?.pageId) router.push(`/pages/${json.data.pageId}`);
+    } else {
+      const j = await res.json().catch(() => ({}));
+      toast({
+        title: '복제 실패',
+        description: j?.error || '',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const onChangeStatus = async (s: PageStatus) => {
     const body: Record<string, unknown> = { status: s };
@@ -94,37 +119,52 @@ export function PageHeader({ page, mode, onStatusChange }: Props) {
   };
 
   return (
-    <div className="border-b bg-card">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-2 px-6 py-3">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+    <div className="glass border-b">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-8 py-4">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <span className="text-lg">{page.treeNode.icon || '📄'}</span>
-        <h1 className="truncate text-lg font-semibold" title={page.treeNode.title}>
-          {page.treeNode.title}
-        </h1>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg">
+            {page.treeNode.icon || '📄'}
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg font-bold tracking-tight" title={page.treeNode.title}>
+              {page.treeNode.title}
+            </h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-xs text-muted-foreground">
+                @{page.authorName}
+              </span>
+              <span className="text-xs text-muted-foreground/40">·</span>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {updatedAt}
+              </span>
+            </div>
+          </div>
+        </div>
 
-        <Select value={page.status} onValueChange={(v) => onChangeStatus(v as PageStatus)}>
-          <SelectTrigger className="ml-1 h-7 w-24">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_OPTIONS.map((s) => (
-              <SelectItem key={s} value={s}>
-                <span className="flex items-center gap-2">
-                  <StatusBadge status={s} />
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-1.5">
+          <Select value={page.status} onValueChange={(v) => onChangeStatus(v as PageStatus)}>
+            <SelectTrigger className="h-7 w-auto gap-1.5 rounded-full border-0 bg-transparent px-0 text-xs hover:bg-accent">
+              <SelectValue>
+                <StatusBadge status={page.status} />
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  <span className="flex items-center gap-2">
+                    <StatusBadge status={s} />
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <span className="text-xs text-muted-foreground">
-          @{page.authorName} · {updatedAt}
-        </span>
+          <div className="h-5 w-px bg-border/50 mx-1" />
 
-        <div className="ml-auto flex items-center gap-1">
           <WatchButton pageId={page.id} treeNodeId={page.treeNode.id} />
 
           <Button
@@ -133,25 +173,26 @@ export function PageHeader({ page, mode, onStatusChange }: Props) {
             onClick={() => setAttachOpen(true)}
             title="첨부 파일"
             aria-label="첨부 파일"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
 
-          <Button variant="ghost" size="icon" onClick={toggleFavorite} title="즐겨찾기">
-            <Star className={favorited ? 'h-4 w-4 fill-yellow-400 text-yellow-500' : 'h-4 w-4'} />
+          <Button variant="ghost" size="icon" onClick={toggleFavorite} title="즐겨찾기" className="h-8 w-8 rounded-lg">
+            <Star className={favorited ? 'h-4 w-4 fill-amber-400 text-amber-500' : 'h-4 w-4 text-muted-foreground hover:text-foreground'} />
           </Button>
 
           {mode === 'view' ? (
-            <Button asChild size="sm">
+            <Button asChild size="sm" className="rounded-full px-4">
               <Link href={`/pages/${page.id}/edit`}>
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-3.5 w-3.5" />
                 편집
               </Link>
             </Button>
           ) : (
-            <Button asChild size="sm" variant="outline">
+            <Button asChild size="sm" variant="outline" className="rounded-full px-4">
               <Link href={`/pages/${page.id}`}>
-                <Eye className="h-4 w-4" />
+                <Eye className="h-3.5 w-3.5" />
                 보기
               </Link>
             </Button>
@@ -159,22 +200,25 @@ export function PageHeader({ page, mode, onStatusChange }: Props) {
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
+            <DropdownMenuContent align="end" className="rounded-xl">
+              <DropdownMenuItem asChild className="rounded-lg">
                 <Link href={`/pages/${page.id}/history`}>
                   <History className="h-3.5 w-3.5" /> 버전 이력
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDuplicate} className="rounded-lg">
+                <Copy className="h-3.5 w-3.5" /> 페이지 복제 (FR-209)
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 pb-3">
+      <div className="mx-auto max-w-5xl px-8 pb-4">
         <TagEditor
           pageId={page.id}
           editable={mode === 'edit'}

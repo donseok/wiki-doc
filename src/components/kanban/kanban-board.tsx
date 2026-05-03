@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -13,15 +13,39 @@ import {
   closestCorners,
 } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/components/ui/use-toast';
-import { KANBAN_COLUMNS, COLUMN_LABEL, type KanbanCardData } from '@/lib/kanban';
+import { cn } from '@/lib/utils';
+import {
+  KANBAN_COLUMNS,
+  COLUMN_LABEL,
+  CARD_COLORS,
+  type KanbanCardData,
+} from '@/lib/kanban';
 import { KanbanColumnView } from './kanban-column';
 import { KanbanCardView } from './kanban-card';
 import { CardCreateDialog } from './card-create-dialog';
 import { CardDetailDialog } from './card-detail-dialog';
+
+interface CardFilter {
+  text: string;
+  author: string;
+  color: string;
+  fromDate: string;
+  toDate: string;
+}
+
+const EMPTY_FILTER: CardFilter = {
+  text: '',
+  author: '',
+  color: '',
+  fromDate: '',
+  toDate: '',
+};
 
 interface Props {
   boardId: string;
@@ -30,7 +54,7 @@ interface Props {
 
 export function KanbanBoard({ boardId, initialCards }: Props) {
   const [cards, setCards] = useState<KanbanCardData[]>(initialCards);
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState<CardFilter>(EMPTY_FILTER);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState<{ open: boolean; column: string }>({
     open: false,
@@ -43,11 +67,29 @@ export function KanbanBoard({ boardId, initialCards }: Props) {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  // 카드 작성자 distinct (자동완성용)
+  const authors = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of cards) if (c.authorName) set.add(c.authorName);
+    return Array.from(set).sort();
+  }, [cards]);
+
   const grouped = useMemo(() => {
-    const term = filter.trim().toLowerCase();
-    const visible = term
-      ? cards.filter((c) => `${c.title} ${c.body ?? ''}`.toLowerCase().includes(term))
-      : cards;
+    const term = filter.text.trim().toLowerCase();
+    const author = filter.author.trim().toLowerCase();
+    const fromTs = filter.fromDate ? new Date(filter.fromDate).getTime() : null;
+    const toTs = filter.toDate ? new Date(filter.toDate).getTime() + 24 * 60 * 60 * 1000 : null;
+
+    const visible = cards.filter((c) => {
+      if (term && !`${c.title} ${c.body ?? ''}`.toLowerCase().includes(term)) return false;
+      if (author && !c.authorName.toLowerCase().includes(author)) return false;
+      if (filter.color && (c.color ?? 'default') !== filter.color) return false;
+      const t = new Date(c.createdAt).getTime();
+      if (fromTs !== null && t < fromTs) return false;
+      if (toTs !== null && t >= toTs) return false;
+      return true;
+    });
+
     const map: Record<string, KanbanCardData[]> = {};
     for (const col of KANBAN_COLUMNS) map[col] = [];
     for (const c of visible) {
@@ -59,6 +101,15 @@ export function KanbanBoard({ boardId, initialCards }: Props) {
     }
     return map;
   }, [cards, filter]);
+
+  const activeFilterCount =
+    Number(!!filter.text) +
+    Number(!!filter.author) +
+    Number(!!filter.color) +
+    Number(!!filter.fromDate) +
+    Number(!!filter.toDate);
+
+  const visibleCount = Object.values(grouped).reduce((sum, list) => sum + list.length, 0);
 
   const activeCard = useMemo(
     () => (activeId ? cards.find((c) => c.id === activeId) : null),
@@ -135,14 +186,130 @@ export function KanbanBoard({ boardId, initialCards }: Props) {
         <div className="relative">
           <Filter className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            value={filter.text}
+            onChange={(e) => setFilter((f) => ({ ...f, text: e.target.value }))}
             placeholder="카드 검색"
-            className="h-8 w-[260px] pl-8"
+            className="h-8 w-[220px] pl-8"
           />
         </div>
-        <span className="text-xs text-muted-foreground">
-          전체 {cards.length}개 · 표시 {Object.values(grouped).flat().length}개
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="gap-1.5">
+              <Filter className="h-3.5 w-3.5" />
+              필터
+              {activeFilterCount > 0 && (
+                <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-80">
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">작성자</Label>
+                <Input
+                  value={filter.author}
+                  onChange={(e) => setFilter((f) => ({ ...f, author: e.target.value }))}
+                  placeholder="작성자 이름 (부분 일치)"
+                  list="kanban-authors"
+                  className="h-8"
+                />
+                <datalist id="kanban-authors">
+                  {authors.map((a) => (
+                    <option key={a} value={a} />
+                  ))}
+                </datalist>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">색상</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFilter((f) => ({ ...f, color: '' }))}
+                    className={cn(
+                      'grid h-7 w-7 place-items-center rounded border-2 text-[10px]',
+                      filter.color === ''
+                        ? 'border-primary bg-accent'
+                        : 'border-border bg-background',
+                    )}
+                    title="전체"
+                  >
+                    All
+                  </button>
+                  {CARD_COLORS.map((c) => (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() =>
+                        setFilter((f) => ({ ...f, color: filter.color === c.key ? '' : c.key }))
+                      }
+                      className={cn(
+                        'h-7 w-7 rounded border-2',
+                        c.bg,
+                        c.border,
+                        filter.color === c.key && 'ring-2 ring-ring ring-offset-1',
+                      )}
+                      title={c.label}
+                      aria-label={c.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">작성일 시작</Label>
+                  <Input
+                    type="date"
+                    value={filter.fromDate}
+                    onChange={(e) => setFilter((f) => ({ ...f, fromDate: e.target.value }))}
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">작성일 끝</Label>
+                  <Input
+                    type="date"
+                    value={filter.toDate}
+                    onChange={(e) => setFilter((f) => ({ ...f, toDate: e.target.value }))}
+                    className="h-8"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFilter(EMPTY_FILTER)}
+                  className="h-7"
+                >
+                  필터 초기화
+                </Button>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {activeFilterCount > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1 text-xs"
+            onClick={() => setFilter(EMPTY_FILTER)}
+          >
+            <X className="h-3 w-3" />
+            모두 지우기
+          </Button>
+        )}
+
+        <span className="ml-auto text-xs text-muted-foreground">
+          전체 {cards.length}개 · 표시 {visibleCount}개
         </span>
       </div>
 

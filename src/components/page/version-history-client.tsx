@@ -8,12 +8,13 @@
  *  - Diff 데이터는 서버 API (/diff?from=&to=) 에서 미리 계산 (큰 본문 효율화)
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
-import { GitCompareArrows, RotateCcw, Loader2 } from 'lucide-react';
+import { GitCompareArrows, RotateCcw, Loader2, Tag, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -46,14 +47,59 @@ interface DiffResponse {
   lines: DiffLine[];
 }
 
-export function VersionHistoryClient({ pageId, versions }: Props) {
+export function VersionHistoryClient({ pageId, versions: initialVersions }: Props) {
   const router = useRouter();
+  const [versions, setVersions] = useState(initialVersions);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffLoading, setDiffLoading] = useState(false);
   const [diffData, setDiffData] = useState<DiffResponse | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
+  const [labelDraft, setLabelDraft] = useState('');
+  const [savingLabelId, setSavingLabelId] = useState<string | null>(null);
   const reqIdRef = useRef(0);
+
+  const startLabelEdit = (v: VersionRow) => {
+    setEditingLabelId(v.id);
+    setLabelDraft(v.label ?? '');
+  };
+
+  const cancelLabelEdit = () => {
+    setEditingLabelId(null);
+    setLabelDraft('');
+  };
+
+  const saveLabel = async (v: VersionRow) => {
+    const next = labelDraft.trim();
+    if (next === (v.label ?? '')) {
+      cancelLabelEdit();
+      return;
+    }
+    setSavingLabelId(v.id);
+    try {
+      const res = await fetch(`/api/pages/${pageId}/versions/${v.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: next || null }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? '라벨 저장 실패');
+      setVersions((prev) =>
+        prev.map((row) => (row.id === v.id ? { ...row, label: next || null } : row)),
+      );
+      toast({ title: next ? '라벨 저장' : '라벨 제거', description: next || `v${v.versionNo}` });
+      cancelLabelEdit();
+    } catch (e) {
+      toast({
+        title: '라벨 저장 실패',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingLabelId(null);
+    }
+  };
 
   const onToggle = useCallback((id: string, checked: boolean) => {
     setSelectedIds((prev) => {
@@ -173,7 +219,7 @@ export function VersionHistoryClient({ pageId, versions }: Props) {
             return (
               <li
                 key={v.id}
-                className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm hover:bg-accent/30"
+                className="group flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm hover:bg-accent/30"
               >
                 <Checkbox
                   checked={checked}
@@ -183,10 +229,71 @@ export function VersionHistoryClient({ pageId, versions }: Props) {
                 <span className="font-mono text-xs text-muted-foreground">v{v.versionNo}</span>
                 <span className="flex-1 min-w-[160px]">
                   {v.summary || <em className="text-muted-foreground">요약 없음</em>}
-                  {v.label && (
-                    <span className="ml-2 inline-flex items-center rounded-md border bg-muted/40 px-1.5 py-0 text-[10px] text-muted-foreground">
-                      {v.label}
+                  {editingLabelId === v.id ? (
+                    <span className="ml-2 inline-flex items-center gap-1 align-middle">
+                      <Input
+                        value={labelDraft}
+                        onChange={(e) => setLabelDraft(e.target.value)}
+                        placeholder="예: v1.0 검토완료"
+                        className="h-6 w-44 px-2 text-xs"
+                        autoFocus
+                        maxLength={80}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void saveLabel(v);
+                          } else if (e.key === 'Escape') {
+                            e.preventDefault();
+                            cancelLabelEdit();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={() => saveLabel(v)}
+                        disabled={savingLabelId === v.id}
+                        aria-label="저장"
+                      >
+                        {savingLabelId === v.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Check className="h-3 w-3" />
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={cancelLabelEdit}
+                        aria-label="취소"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </span>
+                  ) : v.label ? (
+                    <button
+                      type="button"
+                      onClick={() => startLabelEdit(v)}
+                      className="ml-2 inline-flex items-center gap-1 rounded-md border bg-muted/40 px-1.5 py-0 text-[10px] text-muted-foreground hover:bg-accent hover:text-foreground"
+                      title="라벨 편집"
+                    >
+                      <Tag className="h-2.5 w-2.5" />
+                      {v.label}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startLabelEdit(v)}
+                      className="ml-2 inline-flex items-center gap-1 rounded-md border border-dashed px-1.5 py-0 text-[10px] text-muted-foreground/60 opacity-0 hover:bg-accent hover:text-foreground hover:opacity-100 group-hover:opacity-60"
+                      title="라벨 추가 (FR-405)"
+                    >
+                      <Tag className="h-2.5 w-2.5" />
+                      라벨
+                    </button>
                   )}
                 </span>
                 <span className="text-xs text-muted-foreground">@{v.authorName}</span>

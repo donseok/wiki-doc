@@ -234,21 +234,27 @@ model PageTag {
 // =====================================================================
 
 model Comment {
-  id          String    @id @default(cuid())
-  pageId      String
-  page        Page      @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  parentId    String?
-  parent      Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     Comment[] @relation("CommentThread")
-  anchorRange Json?     // FR-502 본문 인라인 코멘트의 텍스트 범위
-  body        String
-  authorName  String    @default("익명")
-  resolved    Boolean   @default(false)
-  reactions   Json?     // FR-506 이모지 반응 ({ "👍": ["a","b"], ... })
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String      @id @default(cuid())
+  pageId        String?
+  page          Page?       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  whiteboardId  String?
+  whiteboard    Whiteboard? @relation(fields: [whiteboardId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Comment?    @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]   @relation("CommentThread")
+  /// FR-502 본문 인라인 코멘트의 텍스트 범위
+  /// FR-1211 화이트보드 코멘트의 좌표/대상 shape ID 도 동일 필드 활용
+  ///         { kind: 'whiteboard-pin', x, y } | { kind: 'whiteboard-shape', shapeId } | { from, to, quote }
+  anchorRange   Json?
+  body          String
+  authorName    String      @default("익명")
+  resolved      Boolean     @default(false)
+  reactions     Json?       // FR-506 이모지 반응 ({ "👍": ["a","b"], ... })
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@index([pageId, createdAt])
+  @@index([whiteboardId, createdAt])
   @@index([parentId])
   @@index([resolved])
 }
@@ -471,6 +477,7 @@ model Whiteboard {
   viewportJson Json?                  // zoom/pan 상태
   elements     WhiteboardElement[]
   conversions  WhiteboardConversion[]
+  comments     Comment[]              // FR-1211 화이트보드 코멘트 (Comment 모델 재사용)
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 }

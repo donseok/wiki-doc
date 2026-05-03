@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
       space: u.searchParams.get('space'),
       tag: u.searchParams.get('tag'),
       status,
+      fromDate: u.searchParams.get('fromDate'),
+      toDate: u.searchParams.get('toDate'),
       sort: (u.searchParams.get('sort') as SearchFilters['sort']) || 'relevance',
       limit: Number(u.searchParams.get('limit') || 50),
     };

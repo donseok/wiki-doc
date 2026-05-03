@@ -23,6 +23,7 @@ import { InlineCommentMark, INLINE_COMMENT_CLICK_EVENT } from '@/components/comm
 import { mentionSuggestion } from '@/components/comments/mention-suggestion';
 import { CommentToolbar } from '@/components/comments/comment-toolbar';
 import { PANEL_OPEN_EVENT, PANEL_RELOAD_EVENT } from '@/components/comments/comment-panel';
+import { WikiLinkSuggestion } from '@/components/editor/wiki-link-suggestion';
 
 import { Save, X, Loader2, FileText, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -114,8 +115,11 @@ export function TiptapEditor({ page }: Props) {
         renderText: ({ node }) => `@${node.attrs.label ?? node.attrs.id ?? ''}`,
         suggestion: mentionSuggestion,
       }),
+      WikiLinkSuggestion,
     ],
-    content: useMemo(() => markdownToHtml(page.contentMarkdown), [page.id]), // initial only
+    // 의도적으로 page.id 만 의존 — page.contentMarkdown 변경 시 재초기화하지 않음 (TipTap 자체 상태 보존)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    content: useMemo(() => markdownToHtml(page.contentMarkdown), [page.id]),
     editorProps: {
       attributes: {
         class:

@@ -83,6 +83,17 @@ export default function SettingsPage() {
       </section>
 
       <section className="space-y-3 rounded-lg border bg-card p-4">
+        <h2 className="font-semibold">이메일 알림 (FR-904)</h2>
+        <p className="text-xs text-muted-foreground">
+          사내 SMTP 가 설정된 경우 멘션 / 결정 요청 / Edit Lock 강제 해제 알림이 이메일로도 전달됩니다.
+          설정은 운영 담당자가 <code className="rounded bg-muted px-1">SMTP_HOST</code>, <code className="rounded bg-muted px-1">SMTP_PORT</code>,{' '}
+          <code className="rounded bg-muted px-1">NOTIFY_EMAIL_DOMAIN</code> 환경 변수로 활성화합니다.
+          <br />
+          사용자명에 직접 이메일을 입력하면(예: <code className="rounded bg-muted px-1">hong@company.local</code>) 우선 적용됩니다.
+        </p>
+      </section>
+
+      <section className="space-y-3 rounded-lg border bg-card p-4">
         <h2 className="font-semibold">관리자 도구</h2>
         <p className="text-xs text-muted-foreground">
           태그 관리(FR-805), 일괄 백업/내보내기(NFR-204), 감사 로그(NFR-304) 등 운영 도구는

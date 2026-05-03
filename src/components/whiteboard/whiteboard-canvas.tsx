@@ -3,12 +3,13 @@
 import 'tldraw/tldraw.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Tldraw, type Editor } from 'tldraw';
-import { Save, Loader2, FileText, Image as ImageIcon, Layers } from 'lucide-react';
+import { Save, Loader2, FileText, Image as ImageIcon, Layers, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { toastError } from '@/lib/toast-error';
 import { downloadBlob } from '@/lib/download';
 import { WHITEBOARD_TEMPLATES, getTemplate } from './whiteboard-templates';
+import { WhiteboardCommentsPanel } from './whiteboard-comments-panel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ interface Props {
   whiteboardId: string;
   initialTitle: string;
   initialSnapshot: unknown | null;
+  currentUser?: string;
 }
 
 const AUTOSAVE_MS = 5_000;
@@ -41,12 +43,18 @@ const AUTOSAVE_MS = 5_000;
  * - 화살표/도형/텍스트 = tldraw 기본
  * - 이모지 스티커 = note + emoji text (단순)
  */
-export function WhiteboardCanvas({ whiteboardId, initialTitle, initialSnapshot }: Props) {
+export function WhiteboardCanvas({
+  whiteboardId,
+  initialTitle,
+  initialSnapshot,
+  currentUser = '익명',
+}: Props) {
   const editorRef = useRef<Editor | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [convertOpen, setConvertOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const dirtyRef = useRef(false);
   const lastSavedAtRef = useRef<number>(Date.now());
@@ -231,6 +239,16 @@ export function WhiteboardCanvas({ whiteboardId, initialTitle, initialSnapshot }
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <Button
+            size="sm"
+            variant={commentsOpen ? 'default' : 'ghost'}
+            onClick={() => setCommentsOpen((s) => !s)}
+            title="코멘트 (FR-1211)"
+          >
+            <MessageCircle className="h-4 w-4" />
+            코멘트
+          </Button>
+
           <Button size="sm" variant="ghost" onClick={exportPng} title="PNG 내보내기 (FR-1212)">
             <ImageIcon className="h-4 w-4" />
             PNG
@@ -248,9 +266,15 @@ export function WhiteboardCanvas({ whiteboardId, initialTitle, initialSnapshot }
         </div>
       </div>
 
-      {/* 캔버스 — 남은 공간 전부 */}
+      {/* 캔버스 — 남은 공간 전부 (코멘트 패널이 absolute 로 우측 오버레이) */}
       <div className="relative flex-1">
         <Tldraw onMount={onMount} hideUi={false} persistenceKey={undefined} />
+        <WhiteboardCommentsPanel
+          whiteboardId={whiteboardId}
+          currentUser={currentUser}
+          open={commentsOpen}
+          onOpenChange={setCommentsOpen}
+        />
       </div>
 
       <ConvertToPageDialog

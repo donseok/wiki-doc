@@ -10,8 +10,10 @@ import { PageBodyWithComments } from '@/components/comments/page-body-with-comme
 export const dynamic = 'force-dynamic';
 
 export default async function PageView({ params }: { params: { id: string } }) {
-  const page = await prisma.page.findUnique({
-    where: { id: params.id },
+  // 트리 메뉴는 TreeNode.id 로 링크하고, 검색/내부 링크는 Page.id 로 링크한다.
+  // 둘 다 호환되도록 OR 조회.
+  const page = await prisma.page.findFirst({
+    where: { OR: [{ id: params.id }, { treeNodeId: params.id }] },
     include: {
       treeNode: { select: { id: true, title: true, icon: true } },
       tags: { include: { tag: true } },

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import dynamicLoad from 'next/dynamic';
 import { prisma } from '@/lib/db';
+import { getCurrentUserServer } from '@/lib/current-user';
 
 // tldraw 는 SSR 비호환 — 클라이언트 전용 동적 import
 const WhiteboardCanvas = dynamicLoad(
@@ -25,12 +26,15 @@ export default async function WhiteboardPage({ params }: { params: { id: string 
   });
   if (!wb) notFound();
 
+  const currentUser = getCurrentUserServer();
+
   return (
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       <WhiteboardCanvas
         whiteboardId={wb.id}
         initialTitle={wb.title}
         initialSnapshot={wb.viewportJson ?? null}
+        currentUser={currentUser}
       />
     </div>
   );

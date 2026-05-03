@@ -44,6 +44,7 @@ import {
   Trash2,
   PencilLine,
   GripVertical,
+  Copy,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -392,6 +393,8 @@ function SortableNodeRow({
   const { node, depth, hasChildren } = item;
   const sortable = useSortable({ id: node.id });
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = sortable;
+  const params = useParams();
+  const isActive = ((params?.id as string) || '') === node.id;
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -404,7 +407,7 @@ function SortableNodeRow({
   const showInside = dropPos?.kind === 'inside' && dropPos.targetId === node.id;
 
   return (
-    <li ref={setNodeRef} style={style} role="treeitem" aria-level={depth + 1}>
+    <li ref={setNodeRef} style={style} role="treeitem" aria-level={depth + 1} aria-selected={isActive}>
       {/* 드롭 인디케이터 (위) */}
       {showBefore && (
         <div
@@ -523,6 +526,36 @@ function TreeNodeRow({
     }
   };
 
+  const onDuplicate = async () => {
+    // FR-209 — node.id 는 TreeNode.id; duplicate API 는 Page.id 도 받지만 TreeNode.id 도
+    // 페이지 라우트에서 OR 조회로 호환되므로 TreeNode.id 를 그대로 보내도 동작한다.
+    const newTitle = window.prompt(
+      '복사본 페이지 제목',
+      `${node.title} (복사본)`,
+    )?.trim();
+    if (!newTitle) return;
+    const res = await fetch(`/api/pages/${node.id}/duplicate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: newTitle }),
+    });
+    if (res.ok) {
+      const json = await res.json();
+      toast({ title: '페이지 복제 완료', description: newTitle });
+      onChanged();
+      if (json?.data?.pageId) {
+        router.push(`/pages/${json.data.pageId}`);
+      }
+    } else {
+      const j = await res.json().catch(() => ({}));
+      toast({
+        title: '복제 실패',
+        description: j?.error || '',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div
       className={cn(
@@ -611,6 +644,11 @@ function TreeNodeRow({
           <DropdownMenuItem onClick={onRename}>
             <PencilLine className="h-3.5 w-3.5" /> 이름 변경
           </DropdownMenuItem>
+          {!isFolder && node.type === 'page' && (
+            <DropdownMenuItem onClick={onDuplicate}>
+              <Copy className="h-3.5 w-3.5" /> 복제 (FR-209)
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             onClick={onDelete}
             className="text-destructive focus:text-destructive"

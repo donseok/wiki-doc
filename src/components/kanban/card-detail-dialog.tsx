@@ -60,6 +60,8 @@ export function CardDetailDialog({ card, open, onOpenChange, onChanged }: Props)
         if (j.ok && Array.isArray(j.data)) setComments(j.data);
       })
       .catch(() => undefined);
+    // card.id 만 변경 트리거 — 다른 card 필드는 prop 직접 사용
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card?.id]);
 
   // 페이지 승격 다이얼로그용 데이터

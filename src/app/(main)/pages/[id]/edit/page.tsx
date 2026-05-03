@@ -12,8 +12,8 @@ const TiptapEditor = dynamicLoad(
 export const dynamic = 'force-dynamic';
 
 export default async function PageEdit({ params }: { params: { id: string } }) {
-  const page = await prisma.page.findUnique({
-    where: { id: params.id },
+  const page = await prisma.page.findFirst({
+    where: { OR: [{ id: params.id }, { treeNodeId: params.id }] },
     include: {
       treeNode: { select: { id: true, title: true, icon: true } },
       tags: { include: { tag: true } },

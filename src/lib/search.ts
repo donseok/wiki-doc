@@ -19,6 +19,8 @@ export interface SearchFilters {
   space?: string | null;     // 트리 최상위 노드 ID (스페이스)
   tag?: string | null;       // 태그 이름
   status?: string | null;    // PageStatus
+  fromDate?: string | null;  // ISO date — 작성일 시작 (FR-304)
+  toDate?: string | null;    // ISO date — 작성일 끝
   sort?: 'relevance' | 'recent' | 'title';
   limit?: number;
 }
@@ -146,6 +148,8 @@ export async function searchPages(filters: SearchFilters): Promise<SearchHit[]> 
         ${filters.status ? prismaStatusFilter(filters.status) : prismaNoOp()}
         ${filters.tag ? prismaTagFilter(filters.tag) : prismaNoOp()}
         ${spacePageIds ? prismaIdInFilter(spacePageIds) : prismaNoOp()}
+        ${filters.fromDate ? prismaFromDateFilter(filters.fromDate) : prismaNoOp()}
+        ${filters.toDate ? prismaToDateFilter(filters.toDate) : prismaNoOp()}
     )
     SELECT *
     FROM page_data
@@ -212,6 +216,15 @@ function prismaTagFilter(tagName: string) {
 }
 function prismaIdInFilter(ids: string[]) {
   return Prisma.sql`AND p.id IN (${Prisma.join(ids)})`;
+}
+function prismaFromDateFilter(iso: string) {
+  return Prisma.sql`AND p."updatedAt" >= ${new Date(iso)}::timestamp`;
+}
+function prismaToDateFilter(iso: string) {
+  // 종료일은 포함 — 23:59:59 까지 가져오기 위해 +1일 미만 비교
+  const d = new Date(iso);
+  d.setDate(d.getDate() + 1);
+  return Prisma.sql`AND p."updatedAt" < ${d}::timestamp`;
 }
 function prismaNoOp() {
   return Prisma.sql``;

@@ -69,17 +69,21 @@ export async function generateEmbeddings(inputs: string[]) {
   const model = getOpenAIEmbeddingModel();
   const dimensions = getOpenAIEmbeddingDimensions();
 
+  const requestBody: Record<string, unknown> = {
+    model,
+    input: inputs,
+  };
+  if (model.startsWith('text-embedding-3')) {
+    requestBody.dimensions = dimensions;
+  }
+
   const res = await fetch(OPENAI_EMBEDDINGS_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model,
-      input: inputs,
-      dimensions,
-    }),
+    body: JSON.stringify(requestBody),
     cache: 'no-store',
   });
 

@@ -26,7 +26,10 @@ import {
   Search,
   Tag as TagIcon,
   ShieldAlert,
+  Sparkles,
+  Loader2,
 } from 'lucide-react';
+import { formatBytes } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -75,6 +78,7 @@ export default function AdminPage() {
           <TabsTrigger value="tags">태그 관리 (FR-805)</TabsTrigger>
           <TabsTrigger value="export">백업 / 내보내기 (NFR-204)</TabsTrigger>
           <TabsTrigger value="audit">감사 로그 (NFR-304)</TabsTrigger>
+          <TabsTrigger value="orphans">고아 첨부 정리 (FR-1103)</TabsTrigger>
         </TabsList>
 
         <TabsContent value="tags">
@@ -87,6 +91,10 @@ export default function AdminPage() {
 
         <TabsContent value="audit">
           <AuditLogSection />
+        </TabsContent>
+
+        <TabsContent value="orphans">
+          <OrphanCleanupSection />
         </TabsContent>
       </Tabs>
     </div>
@@ -642,4 +650,146 @@ const ACTION_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
 
 function ActionBadge({ action }: { action: string }) {
   return <Badge variant={ACTION_VARIANT[action] ?? 'outline'}>{action}</Badge>;
+}
+
+// =====================================================================
+// 고아 첨부 정리 (FR-1103)
+// =====================================================================
+
+interface OrphanRow {
+  id: string;
+  filename: string;
+  size: number;
+  fileType: string;
+  pageId: string | null;
+  createdAt: string;
+}
+
+interface OrphanScan {
+  count: number;
+  totalBytes: number;
+  orphans: OrphanRow[];
+}
+
+function OrphanCleanupSection() {
+  const [scan, setScan] = useState<OrphanScan | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+
+  const runScan = useCallback(async () => {
+    setScanning(true);
+    try {
+      const res = await fetch('/api/admin/orphans', { cache: 'no-store' });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? '스캔 실패');
+      setScan(json.data as OrphanScan);
+    } catch (e) {
+      toastError('스캔 실패', e);
+    } finally {
+      setScanning(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void runScan();
+  }, [runScan]);
+
+  const cleanup = async () => {
+    if (!scan || scan.count === 0) return;
+    if (
+      !window.confirm(
+        `고아 첨부 ${scan.count}개 (${formatBytes(scan.totalBytes)}) 를 영구 삭제합니다. 계속할까요?`,
+      )
+    ) {
+      return;
+    }
+    setCleaning(true);
+    try {
+      const res = await fetch('/api/admin/orphans', { method: 'DELETE' });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) throw new Error(json?.error ?? '정리 실패');
+      toast({
+        title: '정리 완료',
+        description: `DB ${json.data.deleted}개, 파일 ${json.data.filesRemoved}개 삭제 (${formatBytes(json.data.totalBytes)})`,
+      });
+      await runScan();
+    } catch (e) {
+      toastError('정리 실패', e);
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  return (
+    <section className="space-y-4">
+      <div className="rounded-lg border bg-secondary/30 p-3 text-xs text-muted-foreground">
+        <strong className="text-foreground">고아 첨부</strong> = 어떤 페이지 본문에서도 참조되지 않는 첨부 파일.
+        삭제 시 DB 행 + 업로드 파일을 영구 제거하며 감사 로그가 남습니다.
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={runScan} variant="outline" size="sm" disabled={scanning}>
+          {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          다시 스캔
+        </Button>
+        <Button
+          onClick={cleanup}
+          variant="destructive"
+          size="sm"
+          disabled={!scan || scan.count === 0 || cleaning}
+        >
+          {cleaning ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Sparkles className="h-3.5 w-3.5" />
+          )}
+          {scan ? `${scan.count}개 정리` : '정리'}
+        </Button>
+        {scan && (
+          <span className="text-xs text-muted-foreground">
+            총 {formatBytes(scan.totalBytes)} 회수 가능
+          </span>
+        )}
+      </div>
+
+      {scanning ? (
+        <p className="text-sm text-muted-foreground">스캔 중...</p>
+      ) : scan && scan.count === 0 ? (
+        <div className="rounded-lg border bg-card p-12 text-center text-sm text-muted-foreground">
+          🎉 고아 첨부가 없습니다.
+        </div>
+      ) : scan ? (
+        <ScrollArea className="h-[420px] rounded-lg border bg-card">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 border-b bg-card">
+              <tr className="text-left text-xs text-muted-foreground">
+                <th className="px-3 py-2">파일명</th>
+                <th className="px-3 py-2">유형</th>
+                <th className="px-3 py-2 text-right">크기</th>
+                <th className="px-3 py-2">업로드일</th>
+                <th className="px-3 py-2">사유</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {scan.orphans.map((o) => (
+                <tr key={o.id} className="hover:bg-accent/30">
+                  <td className="px-3 py-2 font-mono text-xs">{o.filename}</td>
+                  <td className="px-3 py-2">
+                    <Badge variant="outline">{o.fileType}</Badge>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatBytes(o.size)}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {format(new Date(o.createdAt), 'yyyy-MM-dd HH:mm')}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {o.pageId ? '본문 미참조' : '연결 페이지 없음'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </ScrollArea>
+      ) : null}
+    </section>
+  );
 }

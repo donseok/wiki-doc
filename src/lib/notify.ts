@@ -61,13 +61,29 @@ export async function notifyPageChange(evt: PageChangeEvent): Promise<number> {
   }
   if (recipients.size === 0) return 0;
 
-  await prisma.notification.createMany({
-    data: Array.from(recipients).map((recipient) => ({
-      recipient,
-      type: evt.type,
-      payload: { pageId: evt.pageId, actor: evt.actor, ...(evt.payload ?? {}) },
-    })),
-  });
+  const data = Array.from(recipients).map((recipient) => ({
+    recipient,
+    type: evt.type,
+    payload: { pageId: evt.pageId, actor: evt.actor, ...(evt.payload ?? {}) },
+  }));
+  await prisma.notification.createMany({ data });
+
+  // FR-904 — 이메일 동시 발송 (SMTP 미설정 시 no-op, 화이트리스트 type 만)
+  try {
+    const { maybeSendEmailForNotification } = await import('./email');
+    await Promise.allSettled(
+      data.map((n) =>
+        maybeSendEmailForNotification({
+          recipient: n.recipient,
+          type: n.type,
+          payload: n.payload,
+        }),
+      ),
+    );
+  } catch (e) {
+    console.warn('[notify] email dispatch 실패', e);
+  }
+
   return recipients.size;
 }
 
@@ -83,12 +99,32 @@ export async function notifyMention(opts: {
   const matches = Array.from(opts.body.matchAll(/@([\w가-힣.\-_]+)/g));
   const targets = Array.from(new Set(matches.map((m) => m[1]))).filter((u) => u !== opts.actor);
   if (!targets.length) return 0;
-  await prisma.notification.createMany({
-    data: targets.map((recipient) => ({
-      recipient,
-      type: 'mention',
-      payload: { pageId: opts.pageId, actor: opts.actor, snippet: opts.body.slice(0, 200) },
-    })),
-  });
+  const data = targets.map((recipient) => ({
+    recipient,
+    type: 'mention' as const,
+    payload: {
+      pageId: opts.pageId,
+      actor: opts.actor,
+      snippet: opts.body.slice(0, 200),
+      message: `${opts.actor}님이 코멘트에서 @${recipient} 를 멘션했습니다`,
+    },
+  }));
+  await prisma.notification.createMany({ data });
+
+  // FR-904 이메일
+  try {
+    const { maybeSendEmailForNotification } = await import('./email');
+    await Promise.allSettled(
+      data.map((n) =>
+        maybeSendEmailForNotification({
+          recipient: n.recipient,
+          type: n.type,
+          payload: n.payload,
+        }),
+      ),
+    );
+  } catch (e) {
+    console.warn('[notify] mention email 실패', e);
+  }
   return targets.length;
 }

@@ -35,6 +35,34 @@ const RestoreSchema = z.object({
   summary: z.string().max(500).optional(),
 });
 
+const LabelSchema = z.object({
+  label: z.string().max(80).nullable(),
+});
+
+/**
+ * PATCH — FR-405 사용자 정의 버전 라벨 (예: 'v1.0 검토완료')
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string; versionId: string } },
+) {
+  try {
+    const body = await parseJson(req, LabelSchema);
+    const v = await prisma.pageVersion.findFirst({
+      where: { id: params.versionId, pageId: params.id },
+      select: { id: true },
+    });
+    if (!v) return fail('버전을 찾을 수 없습니다', 404);
+    const updated = await prisma.pageVersion.update({
+      where: { id: params.versionId },
+      data: { label: body.label?.trim() || null },
+    });
+    return ok(updated);
+  } catch (err) {
+    return handleError(err);
+  }
+}
+
 /**
  * 복원 동작 (FR-404):
  *  1) 현재 본문을 새 PageVersion 으로 백업 (versionNo = max+1)
